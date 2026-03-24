@@ -1,0 +1,95 @@
+<div class="dashboard-layout" [class.mobile-nav-open]="mobileNavOpen">
+  <div
+    class="mobile-nav-backdrop"
+    *ngIf="mobileNavOpen"
+    (click)="mobileNavOpen = false"
+    aria-hidden="true"
+  ></div>
+  <button
+    type="button"
+    class="mobile-menu-btn"
+    (click)="mobileNavOpen = !mobileNavOpen"
+    aria-label="Open navigation menu"
+  >
+    <i class="fas fa-bars" aria-hidden="true"></i>
+  </button>
+  <aside class="sidebar">
+    <div class="logo">
+      <img
+        src="assets/images/adnatelogo.png"
+        alt="Adnate IT Solutions"
+        class="logo-img"
+      />
+    </div>
+    
+    <nav class="nav-menu">
+      <a
+        routerLink="dashboard"
+        routerLinkActive="active"
+        class="nav-item"
+        (click)="mobileNavOpen = false"
+      >
+        <span class="icon"><i class="fas fa-th-large"></i></span> Dashboard
+      </a>
+      <a
+        routerLink="inbox"
+        routerLinkActive="active"
+        class="nav-item"
+        (click)="mobileNavOpen = false"
+      >
+        <span class="icon"><i class="fas fa-envelope"></i></span> Inbox
+      </a>
+      <a
+        routerLink="calendar"
+        routerLinkActive="active"
+        class="nav-item"
+        (click)="mobileNavOpen = false"
+      >
+        <span class="icon"><i class="fas fa-calendar-alt"></i></span> Calendar
+      </a>
+      <a
+        routerLink="jobs"
+        routerLinkActive="active"
+        class="nav-item"
+        (click)="mobileNavOpen = false"
+      >
+        <span class="icon"><i class="fas fa-briefcase"></i></span> Jobs
+      </a>
+      <a
+        routerLink="candidates"
+        routerLinkActive="active"
+        class="nav-item"
+        (click)="mobileNavOpen = false"
+      >
+        <span class="icon"><i class="fas fa-user-friends"></i></span> Candidates
+      </a>
+      <a
+        routerLink="offers"
+        routerLinkActive="active"
+        class="nav-item"
+        (click)="mobileNavOpen = false"
+      >
+        <span class="icon"><i class="fas fa-handshake"></i></span> Offers
+      </a>
+    </nav>
+
+    <div class="sidebar-logout">
+      <div class="app-sidebar-actions app-sidebar-actions--padded">
+        <app-theme-toggle></app-theme-toggle>
+        <button type="button" class="app-btn-logout" (click)="logout()">
+          <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
+          <span>Logout</span>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main-content hr-main">
+    <div class="hr-top-bar">
+      <app-header></app-header>
+    </div>
+    <div class="hr-outlet-wrap">
+      <router-outlet></router-outlet>
+    </div>
+  </main>
+</div>

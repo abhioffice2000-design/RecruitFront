@@ -1,0 +1,145 @@
+<div class="hr-add-overlay" (click)="onOverlay($event)">
+  <div class="hr-add-card" (click)="$event.stopPropagation()">
+    <div class="hr-add-head">
+      <h3><i class="fas fa-user-plus"></i> Add candidate</h3>
+      <button type="button" class="hr-add-close" (click)="close()" aria-label="Close"><i class="fas fa-times"></i></button>
+    </div>
+
+    <div class="hr-add-body" *ngIf="!isLoading">
+      <div class="mode-tabs">
+        <button type="button" [class.active]="mode === 'resume'" (click)="mode = 'resume'">
+          <i class="fas fa-file-upload"></i> Upload resume (AI)
+        </button>
+        <button type="button" [class.active]="mode === 'manual'" (click)="mode = 'manual'">
+          <i class="fas fa-keyboard"></i> Manual entry
+        </button>
+      </div>
+
+      <div class="form-group">
+        <label>Job opening <span class="req">*</span></label>
+        <select class="form-input" [(ngModel)]="selectedRequisitionId" name="reqId" (ngModelChange)="onJobChange()">
+          <option value="" disabled>Select job</option>
+          <option *ngFor="let j of jobs" [value]="j.requisition_id">
+            {{ j.title }} — {{ j.department_name }}
+          </option>
+        </select>
+        <small class="error-text" *ngIf="errors['requisition']">{{ errors['requisition'] }}</small>
+      </div>
+
+      <!-- Resume mode -->
+      <ng-container *ngIf="mode === 'resume'">
+        <div class="section-title"><i class="fas fa-paperclip"></i> Resume</div>
+        <div class="drop-zone"
+             (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)"
+             [class.drag-over]="isDragOver" [class.has-file]="resumeFile">
+          <div *ngIf="!resumeFile" class="drop-prompt">
+            <p><strong>Drag & drop</strong> or
+              <label class="browse-label">browse<input type="file" accept=".pdf,.doc,.docx" (change)="onFileSelect($event)" hidden></label>
+            </p>
+            <small>PDF, DOC, DOCX · Max 5MB · AI auto-fills the form</small>
+          </div>
+          <div *ngIf="resumeFile" class="file-info">
+            <i class="fas fa-file-alt" style="font-size:28px;color:#2563eb"></i>
+            <div class="file-details">
+              <span class="file-name">{{ resumeFileName }}</span>
+              <span class="parse-state parsing" *ngIf="isParsing"><i class="fas fa-spinner fa-spin"></i> Parsing…</span>
+              <span class="parse-state success" *ngIf="parseSuccess && !isParsing"><i class="fas fa-check"></i> Parsed</span>
+              <span class="parse-state error" *ngIf="parseError && !isParsing">{{ parseError }}</span>
+            </div>
+            <button type="button" class="remove-file" (click)="removeResume()" [disabled]="isParsing"><i class="fas fa-times"></i></button>
+          </div>
+        </div>
+        <button type="button" class="btn-cancel" style="margin-top:8px" *ngIf="resumeFile && parseError && !isParsing" (click)="parseResumeWithAI()">
+          <i class="fas fa-redo"></i> Retry parse
+        </button>
+        <small class="error-text" *ngIf="errors['resume']">{{ errors['resume'] }}</small>
+      </ng-container>
+
+      <div class="section-title"><i class="fas fa-user"></i> Candidate</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>First name <span class="req">*</span></label>
+          <input class="form-input" [(ngModel)]="form.first_name" name="fn" [class.input-error]="errors['first_name']" />
+          <small class="error-text" *ngIf="errors['first_name']">{{ errors['first_name'] }}</small>
+        </div>
+        <div class="form-group">
+          <label>Last name <span class="req">*</span></label>
+          <input class="form-input" [(ngModel)]="form.last_name" name="ln" [class.input-error]="errors['last_name']" />
+          <small class="error-text" *ngIf="errors['last_name']">{{ errors['last_name'] }}</small>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Email <span class="req">*</span></label>
+          <input class="form-input" type="email" [(ngModel)]="form.email" name="em" [class.input-error]="errors['email']" />
+          <small class="error-text" *ngIf="errors['email']">{{ errors['email'] }}</small>
+        </div>
+        <div class="form-group">
+          <label>Phone <span class="req">*</span></label>
+          <input class="form-input" [(ngModel)]="form.phone" name="ph" [class.input-error]="errors['phone']" />
+          <small class="error-text" *ngIf="errors['phone']">{{ errors['phone'] }}</small>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Experience (years) <span class="req">*</span></label>
+          <input class="form-input" type="number" [(ngModel)]="form.experience_years" name="ex" min="0" max="60" [class.input-error]="errors['experience_years']" />
+          <small class="error-text" *ngIf="errors['experience_years']">{{ errors['experience_years'] }}</small>
+        </div>
+        <div class="form-group">
+          <label>Location <span class="req">*</span></label>
+          <input class="form-input" [(ngModel)]="form.location" name="loc" [class.input-error]="errors['location']" />
+          <small class="error-text" *ngIf="errors['location']">{{ errors['location'] }}</small>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="grid-column: 1 / -1">
+          <label>LinkedIn</label>
+          <input class="form-input" type="url" [(ngModel)]="form.linkedin_url" name="li" placeholder="https://..." />
+        </div>
+      </div>
+
+      <div class="section-title"><i class="fas fa-tools"></i> Skills</div>
+      <div class="skills-row">
+        <span class="skill-chip" *ngFor="let s of selectedSkills; let i = index">
+          {{ s.skill_name }} <small>({{ s.experience_years }} yrs)</small>
+          <button type="button" (click)="removeSkill(i)" title="Remove"><i class="fas fa-times"></i></button>
+        </span>
+      </div>
+      <div class="add-skill-line">
+        <select class="form-input" [(ngModel)]="skillToAdd" name="sk">
+          <option value="">Add skill…</option>
+          <option *ngFor="let s of availableSkills" [value]="s.skill_id">{{ s.skill_name }}</option>
+        </select>
+        <input class="form-input" type="number" min="0" max="40" [(ngModel)]="skillExpToAdd" name="skexp" style="width:88px" placeholder="yrs" />
+        <button type="button" class="btn-cancel" (click)="addSkill()"><i class="fas fa-plus"></i> Add</button>
+      </div>
+
+      <div class="section-title" *ngIf="mode === 'manual'"><i class="fas fa-graduation-cap"></i> Education (manual)</div>
+      <div class="form-row" *ngIf="mode === 'manual'">
+        <div class="form-group">
+          <label>Degree / qualification <span class="req">*</span></label>
+          <input class="form-input" [(ngModel)]="manualDegree" name="md" placeholder="e.g. B.Tech CSE" />
+        </div>
+        <div class="form-group">
+          <label>Institution <span class="req">*</span></label>
+          <input class="form-input" [(ngModel)]="manualInstitution" name="mi" placeholder="University name" />
+        </div>
+      </div>
+      <small class="error-text" *ngIf="errors['education']" style="display:block;margin-bottom:10px">{{ errors['education'] }}</small>
+
+      <div class="hr-add-foot">
+        <button type="button" class="btn-cancel" (click)="close()">Cancel</button>
+        <button type="button" class="btn-submit" (click)="submit()" [disabled]="isSubmitting">
+          <i class="fas" [ngClass]="isSubmitting ? 'fa-spinner fa-spin' : 'fa-check'"></i>
+          {{ isSubmitting ? 'Saving…' : 'Create application' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="hr-add-body" *ngIf="isLoading" style="text-align:center;padding:40px">
+      <i class="fas fa-spinner fa-spin" style="font-size:28px;color:#2563eb"></i>
+      <p>Loading…</p>
+    </div>
+  </div>
+</div>
